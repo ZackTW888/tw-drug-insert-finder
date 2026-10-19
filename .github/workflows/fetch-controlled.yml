@@ -1,0 +1,26 @@
+name: 抓取管制藥品分級
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * 4"   # 每週四 10:17（台灣時間）
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/fetch_controlled.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/controlled.json
+          git diff --cached --quiet || git commit -m "data: 更新管制藥品分級 $(date -u +%F)"
+          git push
