@@ -12,4 +12,4 @@
 
 本工具協助查找官方仿單，非官方服務。用藥請以醫師、藥師指示與最新核准仿單為準。
 
-作者：[AI效能實驗室－許秉軒藥師](https://hsuportfolio-o9pzopyg.manus.space/)
+作者：[AI效能實驗室－許秉軒藥師](https://ai-efficiency-lab-site.vercel.app/)
