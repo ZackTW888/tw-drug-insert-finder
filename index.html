@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="輸入健保碼（或中間五碼）、商品名或學名，查適應症、常見頻次，直接開啟食藥署仿單。AI效能實驗室－許秉軒藥師製作。">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>藥品仿單快查</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+/* 依「AI效能實驗室」CIS v1.0：效能紫主色、火花黃行動色、清新青只用於圖形；單一淺色主題
+   版面：品牌列 → 晨霧紫分割橫幅（標題＋搜尋）→ 兩欄結果卡 */
+:root{
+  --p:#603E8D; --p-deep:#4B2F70; --y:#FFC94A; --t:#36C2B4;
+  --tint:#EFEAF7; --paper:#F8F6FB; --card:#FFFFFF; --ink:#2E2640; --g:#6B6478; --line:#DDD5EA;
+  --warn:#8A5A00; --warn-soft:#FFF1CF; --bad:#A23A3A; --bad-soft:#F7E3E3;
+  --zh:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --en:"Nunito",var(--zh);
+  --r:18px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--en);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--y);outline-offset:3px;border-radius:6px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.in{max-width:1180px;margin:0 auto}
+
+/* 火花星：全站唯一尖角元素 */
+.spark{display:inline-block;width:14px;height:14px;flex:none;background:var(--y);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -20 40 40'%3E%3Cpath d='M0 -19Q0 0 19 0Q0 0 0 19Q0 0 -19 0Q0 0 0 -19Z'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -20 40 40'%3E%3Cpath d='M0 -19Q0 0 19 0Q0 0 0 19Q0 0 -19 0Q0 0 0 -19Z'/%3E%3C/svg%3E") center/contain no-repeat}
+
+/* 品牌列 */
+.bar{background:var(--card);border-bottom:1px solid var(--tint)}
+.bar .in{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand img{width:38px;height:38px}
+.brand b{display:block;font-family:var(--zh);font-size:17px;color:var(--p);letter-spacing:.04em;line-height:1.2}
+.brand small{display:block;font-family:var(--zh);font-size:12px;font-weight:700;letter-spacing:.32em;line-height:1.3;color:var(--ink)}
+.bar-link{font-family:var(--zh);font-weight:700;font-size:14.5px;text-decoration:none;color:var(--p);border:2px solid var(--p);border-radius:999px;padding:4px 16px}
+.bar-link:hover{background:var(--p);color:#fff}
+
+/* 橫幅 */
+.hero{background:linear-gradient(90deg,var(--card) 0 62%,var(--tint) 62% 100%);border-bottom:1px solid var(--tint)}
+.hero .in{padding-block:40px 26px;display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-family:var(--zh);font-size:14px;font-weight:700;color:var(--p);letter-spacing:.12em;margin:0;display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:28px;height:4px;border-radius:4px;background:var(--t);transform:rotate(-37deg)}
+h1{font-family:var(--zh);font-weight:700;font-size:clamp(32px,5vw,52px);color:var(--p);letter-spacing:.04em;line-height:1.25;margin:0;text-wrap:balance}
+.sub{font-size:17px;max-width:40em;margin:0}
+.badges{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px 24px;font-family:var(--zh);font-weight:700;font-size:14.5px}
+.badges li{display:flex;align-items:center;gap:8px}
+
+/* 搜尋 */
+.search{display:flex;flex-direction:column;gap:12px;position:sticky;top:env(safe-area-inset-top,0px);z-index:4;background:var(--paper);padding-block:14px;border-bottom:1px solid var(--tint)}
+.box{display:flex;gap:8px}
+#q{flex:1;min-width:0;font:600 20px var(--en);padding:14px 20px;border:2px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink)}
+#q::placeholder{color:#9A92A8;font-weight:500}
+#q:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 4px rgba(96,62,141,.14)}
+#q:disabled{opacity:.6}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.modes{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:700 14.5px var(--zh);padding:6px 16px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--g);cursor:pointer}
+.chip:hover{border-color:var(--p);color:var(--p)}
+.chip[aria-pressed="true"]{background:var(--p);border-color:var(--p);color:#fff}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-family:var(--zh);font-weight:500;font-size:14.5px;color:var(--ink);cursor:pointer;width:max-content}
+.toggle input{accent-color:var(--p);width:17px;height:17px}
+.status{font-size:14.5px;color:var(--g);display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-family:var(--zh)}
+.status b,.count b{color:var(--p);font-family:var(--en);font-weight:800;font-variant-numeric:tabular-nums}
+
+/* 主體 */
+.wrap{max-width:1180px;margin:0 auto;padding-block:22px 72px;display:flex;flex-direction:column;gap:20px}
+.results{display:flex;flex-direction:column;gap:14px}
+.count{font-size:14.5px;color:var(--g);font-family:var(--zh)}
+.r{background:var(--card);border-radius:var(--r);padding:22px 24px;border-top:5px solid var(--p);box-shadow:0 1px 0 var(--line),0 6px 18px rgba(46,38,64,.05);
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px 28px;align-items:start;min-width:0}
+.r-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.names{min-width:0}
+.zh{font-family:var(--zh);font-weight:700;font-size:21px;line-height:1.4;color:var(--ink);word-break:break-word}
+.en{color:var(--g);font-size:16px;font-weight:600;word-break:break-word}
+.ing{font-size:15.5px;color:var(--g);word-break:break-word;font-family:var(--zh)}
+.ing span{color:var(--ink);font-family:var(--en);font-weight:700}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.m{font:700 14px var(--en);font-variant-numeric:tabular-nums;letter-spacing:.02em;padding:3px 10px;border-radius:8px;background:var(--paper);border:1px solid var(--line);color:var(--ink);word-break:break-all}
+.m.nhi{background:var(--tint);border-color:transparent;color:var(--p)}
+.m .price{color:var(--g);font-weight:600}
+.m.lic,.m.none{font-family:var(--zh);font-weight:500}
+.m.none{color:var(--g)}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;font:700 15px var(--zh);padding:8px 18px;border-radius:999px;text-decoration:none;border:2px solid var(--p);color:var(--p);background:var(--card);transition:transform .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(96,62,141,.18)}
+.btn.primary{background:var(--y);border-color:var(--y);color:var(--ink)}
+
+.facts{margin:0;display:flex;flex-direction:column;gap:12px;padding:16px 18px;background:var(--tint);border-radius:14px;height:100%}
+.fact{display:grid;grid-template-columns:6.4em 1fr;gap:10px;align-items:baseline;min-width:0}
+.fact dt{white-space:nowrap;font-family:var(--zh);font-size:14px;color:var(--p);font-weight:700;letter-spacing:.06em;display:flex;align-items:center;gap:6px}
+.fact dt::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--y);flex:none}
+.fact dd{margin:0;min-width:0;font-family:var(--zh);font-size:16px;line-height:1.7;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.ind{margin:0;flex-basis:100%;word-break:break-word}
+.ind.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.more-txt{border:0;background:none;padding:0;color:var(--p);font:700 14px var(--zh);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.freq{font-weight:700;font-size:17px;color:var(--p);background:var(--card);border-radius:8px;padding:0 10px}
+.freq.peer{color:var(--warn);background:var(--warn-soft)}
+.fsrc{font-size:14px;color:var(--g)}
+.usage{flex-basis:100%;font-size:14px}
+.usage summary{cursor:pointer;color:var(--p);font-weight:700;width:max-content}
+.usage p{margin:6px 0 0;color:var(--ink);white-space:pre-wrap;word-break:break-word;background:var(--card);border-radius:10px;padding:10px 12px}
+
+.empty{text-align:center;color:var(--g);padding:36px 12px;font-family:var(--zh);background:var(--card);border-radius:var(--r);border:2px dashed var(--line)}
+.ex{font:800 14px var(--en);padding:4px 14px;margin:8px 3px 0;border-radius:999px;border:2px solid var(--p);background:var(--card);color:var(--p);cursor:pointer}
+.ex:hover{background:var(--p);color:#fff}
+.small{font:700 14.5px var(--zh);padding:8px 20px;border-radius:999px;border:2px solid var(--p);background:var(--card);color:var(--p);cursor:pointer}
+.morebtn{align-self:center;margin-top:6px}
+mark{background:rgba(255,201,74,.55);color:inherit;border-radius:3px;padding:0 1px}
+
+/* 頁尾 */
+footer{font-size:14px;color:var(--g);font-family:var(--zh)}
+footer p{margin:0 0 6px}
+footer a{color:var(--p);font-weight:700}
+.foot{background:var(--ink);color:#fff;margin-top:8px}
+.foot .in{padding-block:32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px 32px}
+.foot .brand b{color:#fff}.foot .brand small{color:#fff}
+.slogan{margin:0;font-family:var(--zh);font-weight:700}
+.slogan span{display:block;font-family:var(--en);font-weight:800;color:var(--y);font-size:14px}
+.author{display:flex;align-items:center;gap:10px;margin:0;font-family:var(--zh)}
+.author a{color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);font-weight:700}
+.author a:hover{color:var(--y);border-color:var(--y)}
+.author-inline{width:52px;height:52px;object-fit:cover;object-position:top;border-radius:50%;background:var(--tint);border:2px solid var(--y)}
+
+/* 左下角形象照：圓框＋57° 開口弧＋火花星 */
+.portrait{display:none}
+@media (prefers-reduced-motion:no-preference){.r{animation:rise .2s ease-out}@keyframes rise{from{transform:translateY(4px)}to{transform:none}}}
+@media (max-width:820px){
+  .bar-link{font-size:13px;padding:3px 12px;white-space:nowrap}
+  .r{grid-template-columns:1fr;padding:18px}
+  .zh{font-size:19px}
+  .hero{background:var(--card)}
+}
+@media (min-width:1280px){
+  .wrap,.search .in{padding-left:240px}
+  .author-inline{display:none}
+  .portrait{display:block;position:fixed;z-index:5;width:220px;height:300px;text-decoration:none;
+    left:calc(max(16px, env(safe-area-inset-left,0px)) + 4px);bottom:env(safe-area-inset-bottom,0px)}
+  .portrait .disc{position:absolute;left:10px;bottom:18px;width:200px;height:200px;border-radius:50%;background:var(--tint)}
+  .portrait .arc{position:absolute;left:0;bottom:8px;width:220px;height:220px}
+  .portrait .arc path{fill:none;stroke:var(--p);stroke-width:6;stroke-linecap:round}
+  .portrait .spark{position:absolute;width:30px;height:30px;left:168px;bottom:196px}
+  .portrait img{position:absolute;left:28px;bottom:0;width:164px;height:auto;filter:drop-shadow(0 6px 12px rgba(46,38,64,.18))}
+  .portrait-name{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);white-space:nowrap;text-align:center;font-family:var(--zh);font-size:12.5px;line-height:1.35;color:var(--ink);
+    background:var(--card);border-radius:10px;padding:5px 12px;box-shadow:0 4px 12px rgba(46,38,64,.14);border-left:4px solid var(--y)}
+  .portrait-name b{color:var(--p);font-size:14.5px}
+  .portrait:hover .portrait-name,.portrait:focus-visible .portrait-name{background:var(--p);color:#fff}
+  .portrait:hover .portrait-name b,.portrait:focus-visible .portrait-name b{color:var(--y)}
+}
+</style>
+</head>
+<body>
+
+<header class="bar gut">
+  <div class="in">
+    <a class="brand" href="https://hsuportfolio-o9pzopyg.manus.space/" target="_blank" rel="noopener" aria-label="AI效能實驗室 作者介紹">
+      <img src="logo.svg" alt="" width="38" height="38">
+      <span><b>AI效能實驗室</b><small>許秉軒藥師</small></span>
+    </a>
+    <a class="bar-link" href="https://hsuportfolio-o9pzopyg.manus.space/" target="_blank" rel="noopener">認識作者 →</a>
+  </div>
+</header>
+
+<section class="hero gut">
+  <div class="in">
+    <p class="eyebrow">給藥師、醫護與民眾的仿單查詢工具</p>
+    <h1>藥品仿單快查</h1>
+    <p class="sub">輸入健保碼、商品名或學名，直接開啟食藥署仿單。只記得健保碼第 3–7 碼（五碼數字）也查得到。</p>
+    <ul class="badges">
+      <li><i class="spark" aria-hidden="true"></i>健保五碼模糊搜尋</li>
+      <li><i class="spark" aria-hidden="true"></i>適應症與常見頻次</li>
+      <li><i class="spark" aria-hidden="true"></i>官方仿單 PDF 一鍵開啟</li>
+    </ul>
+  </div>
+</section>
+
+<div class="search gut">
+  <div class="in" style="display:flex;flex-direction:column;gap:12px">
+    <div class="box">
+      <input id="q" type="search" autocomplete="off" placeholder="例：58214、AC58214209、Glucophage、metformin" aria-label="搜尋藥品" disabled>
+    </div>
+    <div class="controls">
+      <div class="modes" role="group" aria-label="搜尋方式">
+        <button class="chip" data-mode="auto" aria-pressed="true">自動判斷</button>
+        <button class="chip" data-mode="nhi" aria-pressed="false">健保碼</button>
+        <button class="chip" data-mode="name" aria-pressed="false">商品名</button>
+        <button class="chip" data-mode="ing" aria-pressed="false">學名／成分</button>
+        <button class="chip" data-mode="lic" aria-pressed="false">許可證字號</button>
+      </div>
+      <label class="toggle"><input type="checkbox" id="nhiOnly"> 只看有健保碼的藥品</label>
+    </div>
+    <div class="status" id="status">正在載入藥品資料…</div>
+  </div>
+</div>
+
+<main class="wrap gut">
+  <section class="results" id="results" aria-live="polite"></section>
+  <footer>
+    <p>資料來源：衛生福利部食品藥物管理署「全部藥品許可證」「藥品仿單或外盒」資料集、中央健康保險署「健保用藥品項」，經開源專案 <a href="https://github.com/liangRXdev/TFDA-drug-info-search" target="_blank" rel="noopener">TFDA-drug-info-search</a> 每週自動整併。收錄有效許可證；健保碼只收現行有效、且對得到許可證的品項。</p>
+    <p>本工具協助查找官方仿單，非官方服務。適應症與用法取自許可證登載內容，「參考」頻次為同成分其他藥證的整理，用藥請以醫師、藥師指示與最新核准仿單為準。</p>
+    </footer>
+</main>
+
+<footer class="foot gut">
+  <div class="in">
+    <div class="brand">
+      <img src="logo-white.svg" alt="" width="38" height="38">
+      <span><b>AI效能實驗室</b><small>許秉軒藥師</small></span>
+    </div>
+    <p class="slogan">是你，讓 AI 更強大<span>You Make AI Stronger.</span></p>
+    <p class="author"><img class="author-inline" src="author.png" alt="">作者　<a href="https://hsuportfolio-o9pzopyg.manus.space/" target="_blank" rel="noopener">AI效能實驗室－許秉軒藥師</a></p>
+  </div>
+</footer>
+
+<a class="portrait" href="https://hsuportfolio-o9pzopyg.manus.space/" target="_blank" rel="noopener" aria-label="作者：AI效能實驗室－許秉軒藥師">
+  <span class="disc"></span>
+  <svg class="arc" viewBox="0 0 200 200" aria-hidden="true"><path d="M170.6 81.7A74 74 0 1 1 119.8 32.7"/></svg>
+  <i class="spark" aria-hidden="true"></i>
+  <img src="author.png" alt="許秉軒藥師">
+  <span class="portrait-name">AI效能實驗室<br><b>許秉軒藥師</b></span>
+</a>
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const state = { mode: "auto", nhiOnly: false, products: [], meta: null };
+const MCP = "https://mcp.fda.gov.tw/";
+
+const norm = s => (s == null ? "" : String(s)).trim();
+const lc = s => norm(s).toLowerCase();
+const licKey = s => norm(s).replace(/\s+/g, "");
+
+/* 健保藥品代碼 10 碼：證別(1) + 證號(6，第2碼可能被品質分級 A/B/C/D/0 取代) + 劑型(1) + 規格(2)
+   第 3–7 碼 = 許可證證號後 5 碼，不受品質分級影響。 */
+function fiveKeys(lic, nhi){
+  const s = new Set();
+  for (const n of nhi) if (n.code.length >= 7) s.add(n.code.slice(2, 7));
+  const m = /字第0*(\d{1,6})號/.exec(lic);
+  if (m) s.add(m[1].padStart(6, "0").slice(1));
+  return [...s];
+}
+
+function index(rows){
+  state.products = rows.map(r => {
+    const [lic, zh, en, ing, ins, lab, nhiRaw, raw, ex, ind, freq, fsrc, fn, usage, multi] = r;
+    const nhi = nhiRaw.map(([code, price, ok]) => ({ code, price, ok: !!ok }));
+    return { lic, zh, en, ing, ins, lab, nhi, raw: !!raw, ex: !!ex, ind, freq, fsrc, fn, usage, multi: !!multi,
+      _name: lc(zh + " " + en), _ing: lc(ing), _lic: licKey(lic), _five: fiveKeys(lic, nhi) };
+  });
+}
+
+/* ---------- 搜尋 ---------- */
+function detect(q){
+  const c = q.replace(/[\s-]/g, "");
+  if (/^\d{1,5}$/.test(c)) return "nhi";
+  if (/^[A-Z][A-Z0-9]\d{0,8}[A-Z0-9]?$/i.test(c) && /\d/.test(c)) return "nhi";
+  if (/字第|^\d{6}$/.test(q)) return "lic";
+  return "text";
+}
+function search(raw){
+  const q = norm(raw); if (!q) return [];
+  const mode = state.mode === "auto" ? detect(q) : state.mode;
+  const pool = state.nhiOnly ? state.products.filter(p => p.nhi.length) : state.products;
+  if (mode === "nhi"){
+    const c = q.replace(/[\s-]/g, "").toUpperCase();
+    if (/^\d+$/.test(c)){
+      const key = c.length === 6 ? c.slice(1) : c.slice(0, 5);
+      const score = new Map();
+      for (const p of pool){
+        if (p._five.includes(key)) score.set(p, 0);
+        else if (p._five.some(f => f.startsWith(key))) score.set(p, 1);
+        else if (c.length >= 3 && p.nhi.some(n => n.code.includes(c))) score.set(p, 2);
+      }
+      return rank([...score.keys()], p => score.get(p) + (p.nhi.length ? 0 : 0.3));
+    }
+    const loose = code => code[0] === c[0] && (c.length < 3 || code.slice(2).startsWith(c.slice(2)));
+    const out = pool.filter(p => p.nhi.some(n => n.code.startsWith(c) || loose(n.code)));
+    return rank(out, p => p.nhi.some(n => n.code === c) ? 0 : p.nhi.some(n => n.code.startsWith(c)) ? 1 : 2);
+  }
+  if (mode === "lic"){
+    const m = /(\d{1,6})/.exec(licKey(q).replace(/.*字第/, ""));
+    const num = m ? m[1].padStart(6, "0") : "";
+    const txt = licKey(q);
+    return rank(pool.filter(p => p._lic.includes(txt) || (num && p._lic.includes("第" + num + "號"))), () => 0);
+  }
+  const terms = lc(q).split(/\s+/).filter(Boolean);
+  const field = mode === "name" ? p => p._name : mode === "ing" ? p => p._ing : p => p._name + " " + p._ing;
+  const out = pool.filter(p => { const f = field(p); return terms.every(t => f.includes(t)); });
+  return rank(out, p => {
+    const t = terms[0];
+    if (p._name.startsWith(t) || lc(p.en).startsWith(t)) return 0;
+    if (p._ing.startsWith(t)) return 0.5;
+    return p._name.includes(t) ? 1 : 2;
+  });
+}
+function rank(arr, score){
+  return arr.map(p => [p, score(p) + (p.raw ? 5 : 0) + (p.nhi.length ? 0 : 0.2) + (p.ins || p.ex ? 0 : 0.4)])
+    .sort((a, b) => a[1] - b[1] || a[0]._name.localeCompare(b[0]._name)).map(x => x[0]);
+}
+
+/* ---------- 畫面 ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function hl(text, q){
+  const t = esc(text); const terms = lc(q).split(/\s+/).filter(x => x.length > 1 && !/^\d+$/.test(x));
+  if (!terms.length) return t;
+  return t.replace(new RegExp("(" + terms.map(x => reEsc(esc(x))).join("|") + ")", "gi"), "<mark>$1</mark>");
+}
+function card(p, q){
+  const lic = encodeURIComponent(p.lic);
+  const links = [];
+  if (p.ins) links.push(`<a class="btn primary" href="${MCP}insert/${esc(p.ins)}" target="_blank" rel="noopener">仿單 PDF</a>`);
+  links.push(`<a class="btn${p.ins ? "" : " primary"}" href="${MCP}im_detail_1/${lic}" target="_blank" rel="noopener">${p.ex ? "食藥署電子仿單" : "食藥署仿單頁"}</a>`);
+  if (p.lab) links.push(`<a class="btn" href="${MCP}insert/${esc(p.lab)}" target="_blank" rel="noopener">外盒／標籤</a>`);
+
+  const d = q.replace(/[\s-]/g, "");
+  const digits = /^\d{1,6}$/.test(d) ? d : "";
+  const key = digits.length === 6 ? digits.slice(1) : digits;
+  const codeHtml = c => (key && c.length >= 7 && c.slice(2, 7).startsWith(key))
+    ? esc(c.slice(0, 2)) + "<mark>" + esc(c.slice(2, 2 + key.length)) + "</mark>" + esc(c.slice(2 + key.length))
+    : esc(c);
+  const meta = [];
+  for (const n of p.nhi) meta.push(`<span class="m nhi" title="${n.ok ? "健保碼（成分已核對）" : "健保碼（依代碼推定）"}">${codeHtml(n.code)}${n.price ? ` <span class="price">$${esc(n.price)}</span>` : ""}${n.ok ? "" : " *"}</span>`);
+  if (!p.nhi.length) meta.push(`<span class="m none">無健保碼</span>`);
+  meta.push(`<span class="m lic">${esc(p.lic)}</span>`);
+  if (p.raw) meta.push(`<span class="m lic">原料藥</span>`);
+  return `<article class="r">
+    <div class="r-main">
+    <div class="names"><div class="zh">${hl(p.zh || p.en, q)}</div>${p.zh && p.en ? `<div class="en">${hl(p.en, q)}</div>` : ""}</div>
+    ${p.ing ? `<div class="ing">成分　<span>${hl(p.ing, q)}</span></div>` : ""}
+    <div class="meta">${meta.join("")}</div>
+    <div class="links">${links.join("")}</div>
+    </div>
+    <dl class="facts">
+      <div class="fact"><dt>適應症</dt><dd>${indHtml(p)}</dd></div>
+      <div class="fact"><dt>常見頻次</dt><dd>${freqHtml(p)}</dd></div>
+    </dl>
+  </article>`;
+}
+function indHtml(p){
+  const t = (p.ind || "").trim();
+  if (!t || /^.{0,6}(詳見|詳如|如)(仿單|說明書).{0,4}$/.test(t)) return `<span class="fsrc">許可證未登載適應症，請見仿單</span>`;
+  const long = t.length > 80;
+  let h = `<p class="ind${long ? " clamp" : ""}">${esc(t)}</p>${long ? `<button class="more-txt" type="button">展開</button>` : ""}`;
+  if (t.replace(/[。.\s]/g, "").length < 8) h += `<span class="fsrc">許可證僅登載簡略類別，完整適應症請見仿單</span>`;
+  return h;
+}
+function freqHtml(p){
+  let h;
+  if (p.fsrc === 1) h = `<span class="freq">${esc(p.freq)}</span><span class="fsrc">${p.multi ? "許可證用法用量・依適應症或年齡另有不同用法，請看原文" : "許可證用法用量"}</span>`;
+  else if (p.fsrc === 2) h = `<span class="freq peer">${esc(p.freq)}</span><span class="fsrc">參考：同成分同劑型 ${p.fn} 張藥證</span>`;
+  else h = `<span class="fsrc">許可證未載明，請見仿單</span>`;
+  if (p.usage) h += `<details class="usage"${p.multi ? " open" : ""}><summary>用法用量原文</summary><p>${esc(p.usage)}</p></details>`;
+  return h;
+}
+const PAGE = 60;
+let lastRes = [], shown = 0;
+function render(){
+  const q = $("#q").value; const box = $("#results");
+  if (!norm(q)){
+    box.innerHTML = `<div class="empty">輸入健保碼（或第 3–7 碼）、商品名、學名或許可證字號。<br>試試 <button class="ex" data-q="58214">58214</button> <button class="ex" data-q="metformin">metformin</button> <button class="ex" data-q="普拿疼">普拿疼</button></div>`;
+    return;
+  }
+  lastRes = search(q); shown = 0;
+  if (!lastRes.length){ box.innerHTML = `<div class="empty">找不到「${esc(q)}」。可以試試英文品名、只打成分名的前幾個字，或切換搜尋方式。</div>`; return; }
+  box.innerHTML = `<div class="count">找到 <b>${lastRes.length.toLocaleString()}</b> 筆</div>`;
+  more();
+}
+function more(){
+  const q = $("#q").value; const box = $("#results");
+  const old = box.querySelector(".morebtn"); if (old) old.remove();
+  box.insertAdjacentHTML("beforeend", lastRes.slice(shown, shown + PAGE).map(p => card(p, q)).join(""));
+  shown += PAGE;
+  if (shown < lastRes.length) box.insertAdjacentHTML("beforeend", `<button class="small morebtn" type="button">再顯示 ${Math.min(PAGE, lastRes.length - shown)} 筆（剩 ${(lastRes.length - shown).toLocaleString()} 筆）</button>`);
+}
+
+/* ---------- 事件 ---------- */
+let timer;
+$("#q").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(render, 140); });
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  state.mode = b.dataset.mode;
+  document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  render(); $("#q").focus();
+}));
+$("#nhiOnly").addEventListener("change", e => { state.nhiOnly = e.target.checked; render(); });
+$("#results").addEventListener("click", e => {
+  if (e.target.closest(".morebtn")) { more(); return; }
+  const mt = e.target.closest(".more-txt");
+  if (mt){ const ind = mt.previousElementSibling; const open = ind.classList.toggle("clamp"); mt.textContent = open ? "展開" : "收合"; return; }
+  const ex = e.target.closest(".ex"); if (ex){ $("#q").value = ex.dataset.q; render(); $("#q").focus(); }
+});
+
+/* ---------- 載入資料 ---------- */
+(async () => {
+  try {
+    const res = await fetch("drugs.json");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    state.meta = data.meta; index(data.rows);
+    const m = data.meta; const dt = norm(m.generatedAt).slice(0, 10);
+    $("#status").innerHTML = `<span>許可證 <b>${m.licenses.toLocaleString()}</b></span><span>健保碼 <b>${m.nhiCodes.toLocaleString()}</b></span><span>資料日期 <b>${esc(dt)}</b></span>`;
+    $("#q").disabled = false; $("#q").focus();
+    render();
+  } catch (e){
+    $("#status").textContent = "藥品資料載入失敗，請重新整理頁面。（" + (e.message || e) + "）";
+  }
+})();
+})();
+</script>
+
+</body>
+</html>
