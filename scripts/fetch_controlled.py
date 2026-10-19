@@ -2,6 +2,8 @@
 輸出 data/controlled.json：{ "generatedAt": ..., "source": ..., "levels": { 許可證字號: "第四級管制藥品", ... }, "summary": {...} }
 """
 import io, json, zipfile, datetime, collections, sys, time, urllib.request, traceback
+import os
+os.makedirs("data", exist_ok=True)
 LOG = []
 def log(*a):
     m = " ".join(str(x) for x in a); LOG.append(m); print(m)
