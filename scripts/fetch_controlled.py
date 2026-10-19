@@ -29,8 +29,13 @@ def fetch(url):
 def load(raw):
     if raw[:2] == b"PK":
         z = zipfile.ZipFile(io.BytesIO(raw))
-        name = next(n for n in z.namelist() if n.lower().endswith(".json"))
-        raw = z.read(name)
+        names = [n for n in z.namelist() if n.lower().endswith(".json")]
+        log("zip members:", names)
+        rows = []
+        for n in names:
+            d = json.loads(z.read(n).decode("utf-8-sig"))
+            rows += d if isinstance(d, list) else next(v for v in d.values() if isinstance(v, list))
+        return rows
     return json.loads(raw.decode("utf-8-sig"))
 
 data, used = None, None
