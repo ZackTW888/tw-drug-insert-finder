@@ -113,6 +113,8 @@ h1{font-family:var(--zh);font-weight:700;font-size:clamp(32px,5vw,52px);color:va
 .ex:hover{background:var(--p);color:#fff}
 .small{font:700 14.5px var(--zh);padding:8px 20px;border-radius:999px;border:2px solid var(--p);background:var(--card);color:var(--p);cursor:pointer}
 .morebtn{align-self:center;margin-top:6px}
+/* 管制藥品分級：法規語意色，不屬品牌色 */
+.ctl{display:inline-flex;align-items:center;gap:4px;font:700 14px var(--zh);letter-spacing:.06em;color:#fff;background:#C62828;border-radius:6px;padding:2px 10px;margin-bottom:6px;box-shadow:0 2px 6px rgba(198,40,40,.25)}
 mark{background:rgba(255,201,74,.55);color:inherit;border-radius:3px;padding:0 1px}
 
 /* 頁尾 */
@@ -204,7 +206,7 @@ footer a{color:var(--p);font-weight:700}
   <section class="results" id="results" aria-live="polite"></section>
   <footer>
     <p>資料來源：衛生福利部食品藥物管理署「全部藥品許可證」「藥品仿單或外盒」資料集、中央健康保險署「健保用藥品項」，經開源專案 <a href="https://github.com/liangRXdev/TFDA-drug-info-search" target="_blank" rel="noopener">TFDA-drug-info-search</a> 每週自動整併。收錄有效許可證；健保碼只收現行有效、且對得到許可證的品項。</p>
-    <p>本工具協助查找官方仿單，非官方服務。適應症與用法取自許可證登載內容，「參考」頻次為同成分其他藥證的整理，用藥請以醫師、藥師指示與最新核准仿單為準。</p>
+    <p>紅色「管1–管4」標籤為食藥署許可證登載的管制藥品分級（每週自動更新）。本工具協助查找官方仿單，非官方服務。適應症與用法取自許可證登載內容，「參考」頻次為同成分其他藥證的整理，用藥請以醫師、藥師指示與最新核准仿單為準。</p>
     </footer>
 </main>
 
@@ -249,9 +251,9 @@ function fiveKeys(lic, nhi){
 
 function index(rows){
   state.products = rows.map(r => {
-    const [lic, zh, en, ing, ins, lab, nhiRaw, raw, ex, ind, freq, fsrc, fn, usage, multi] = r;
+    const [lic, zh, en, ing, ins, lab, nhiRaw, raw, ex, ind, freq, fsrc, fn, usage, multi, ctl] = r;
     const nhi = nhiRaw.map(([code, price, ok]) => ({ code, price, ok: !!ok }));
-    return { lic, zh, en, ing, ins, lab, nhi, raw: !!raw, ex: !!ex, ind, freq, fsrc, fn, usage, multi: !!multi,
+    return { lic, zh, en, ing, ins, lab, nhi, raw: !!raw, ex: !!ex, ind, freq, fsrc, fn, usage, multi: !!multi, ctl: ctl || 0,
       _name: lc(zh + " " + en), _ing: lc(ing), _lic: licKey(lic), _five: fiveKeys(lic, nhi) };
   });
 }
@@ -333,7 +335,7 @@ function card(p, q){
   if (p.raw) meta.push(`<span class="m lic">原料藥</span>`);
   return `<article class="r">
     <div class="r-main">
-    <div class="names"><div class="zh">${hl(p.zh || p.en, q)}</div>${p.zh && p.en ? `<div class="en">${hl(p.en, q)}</div>` : ""}</div>
+    <div class="names">${p.ctl ? `<span class="ctl" title="${["","第一級","第二級","第三級","第四級"][p.ctl]}管制藥品（依食藥署許可證登載）">管${p.ctl}</span>` : ""}<div class="zh">${hl(p.zh || p.en, q)}</div>${p.zh && p.en ? `<div class="en">${hl(p.en, q)}</div>` : ""}</div>
     ${p.ing ? `<div class="ing">成分　<span>${hl(p.ing, q)}</span></div>` : ""}
     <div class="meta">${meta.join("")}</div>
     <div class="links">${links.join("")}</div>

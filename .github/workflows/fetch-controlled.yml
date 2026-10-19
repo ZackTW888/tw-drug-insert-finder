@@ -17,10 +17,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: python scripts/fetch_controlled.py
+      - run: python scripts/add_controlled.py
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/
+          git add data/ drugs.json
           git diff --cached --quiet || git commit -m "data: 更新管制藥品分級 $(date -u +%F)"
           git push
