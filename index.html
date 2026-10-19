@@ -115,6 +115,7 @@ h1{font-family:var(--zh);font-weight:700;font-size:clamp(32px,5vw,52px);color:va
 .morebtn{align-self:center;margin-top:6px}
 /* 管制藥品分級：法規語意色，不屬品牌色 */
 .ctl{display:inline-flex;align-items:center;gap:4px;font:700 14px var(--zh);letter-spacing:.06em;color:#fff;background:#C62828;border-radius:6px;padding:2px 10px;margin-bottom:6px;box-shadow:0 2px 6px rgba(198,40,40,.25)}
+.ctl-warn{display:inline-flex;align-items:center;vertical-align:middle;margin-left:10px;font:700 14px var(--zh);letter-spacing:.04em;color:#3A1C00;background:#F59A23;border-radius:999px;padding:2px 12px;white-space:nowrap}
 mark{background:rgba(255,201,74,.55);color:inherit;border-radius:3px;padding:0 1px}
 
 /* 頁尾 */
@@ -335,7 +336,7 @@ function card(p, q){
   if (p.raw) meta.push(`<span class="m lic">原料藥</span>`);
   return `<article class="r">
     <div class="r-main">
-    <div class="names">${p.ctl ? `<span class="ctl" title="${["","第一級","第二級","第三級","第四級"][p.ctl]}管制藥品（依食藥署許可證登載）">管${p.ctl}</span>` : ""}<div class="zh">${hl(p.zh || p.en, q)}</div>${p.zh && p.en ? `<div class="en">${hl(p.en, q)}</div>` : ""}</div>
+    <div class="names">${p.ctl ? `<span class="ctl" title="${["","第一級","第二級","第三級","第四級"][p.ctl]}管制藥品（依食藥署許可證登載）">管${p.ctl}</span>` : ""}<div class="zh">${hl(p.zh || p.en, q)}${p.ctl ? `<span class="ctl-warn" role="note">⚠ 請洽專業醫療人員</span>` : ""}</div>${p.zh && p.en ? `<div class="en">${hl(p.en, q)}</div>` : ""}</div>
     ${p.ing ? `<div class="ing">成分　<span>${hl(p.ing, q)}</span></div>` : ""}
     <div class="meta">${meta.join("")}</div>
     <div class="links">${links.join("")}</div>
