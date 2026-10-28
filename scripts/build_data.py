@@ -23,6 +23,8 @@ items = []
 U = lambda v: html.unescape(html.unescape(v or '')).strip()
 for r in d['data']:
     for k in ('chName','enName','ingredients','indication','usage'): r[k] = U(r.get(k))
+    for k in ('chName','enName'):
+        if not re.search(r'[0-9A-Za-z\u4e00-\u9fff]', r[k]): r[k] = ''  # 官方登載為「*」等佔位符
     name = r['chName'] + ' ' + r['enName']
     u = r['usage']
     f, multi = freq.extract2(u)
