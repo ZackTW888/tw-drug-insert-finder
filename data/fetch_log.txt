@@ -1,4 +1,4 @@
-GET https://data.fda.gov.tw/data/opendata/export/37/json -> 200 application/zip 4450065 bytes, head=b'PK\x03\x04\x14\x00\x08\x08\x08\x00\xf4zV]\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\t\x00\x00\x0037_5.json\xec\xbdiS\x1bY\xd6.\xfaW\x14\x8e\xe8\x08;\xa2m+S\xf3\xe5\xc3\r!d\xa3\xd3\x02\xd1\x08\xea-\xd7\xf5\x17\xb5\xadr\xe9\xbe\x80'
+GET https://data.fda.gov.tw/data/opendata/export/37/json -> 200 application/zip 4451969 bytes, head=b'PK\x03\x04\x14\x00\x08\x08\x08\x00HB[]\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\t\x00\x00\x0037_5.json\xec\xbd\xe9R\x1b\xd9\xb6?\xf8*\x19\x8e\xb8\xb7\xa1\xc3\xd8\x9a\x10\xd0\xf4\x97\x94HC\x96\x85R\x7f\rvQ\xed/\x94\xadcs\x0f\x06_'
 zip members: ['37_5.json']
 fields: ['許可證字號', '註銷狀態', '註銷日期', '註銷理由', '有效日期', '發證日期', '許可證種類', '舊證字號', '通關簽審文件編號', '中文品名', '英文品名', '適應症', '劑型', '包裝', '藥品類別', '管制藥品分類級別', '主成分略述', '申請商名稱', '申請商地址', '申請商統一編號', '製造商名稱', '製造廠廠址', '製造廠公司地址', '製造廠國別', '製程', '異動日期', '用法用量', '包裝與國際條碼']
-25956 licenses; {'第四級管制藥品': 578, '第三級管制藥品': 120, '第二級管制藥品': 91, '第一級管制藥品': 22, '取消管制藥品註記': 52}
+25964 licenses; {'第四級管制藥品': 578, '第三級管制藥品': 120, '第二級管制藥品': 91, '取消管制藥品註記': 52, '第一級管制藥品': 22}
