@@ -1,0 +1,49 @@
+name: 重建藥品資料
+
+# 從食藥署、健保署抓當天最新的原始開放資料重建 drugs.json
+# 整合程式取自開源專案 liangRXdev/TFDA-drug-info-search（MIT）
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 1 * * 1"   # 每週一 09:37（台灣時間）
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-drugs
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 安裝工具
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+          pip install -q "requests>=2.31"
+      - name: 取得上游整合程式
+        run: git clone -q --depth 1 https://github.com/liangRXdev/TFDA-drug-info-search.git upstream
+      - name: 從食藥署、健保署下載並整合當日資料
+        working-directory: upstream
+        run: python build_data.py
+      - name: 精簡為網頁資料、判讀頻次
+        run: python scripts/build_data.py upstream/drugs_data.json drugs.json
+      - name: 管制藥品分級
+        run: |
+          python scripts/fetch_controlled.py
+          python scripts/add_controlled.py
+      - name: Commit
+        run: |
+          cp upstream/data_version.json data/upstream_version.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add drugs.json data/
+          git diff --cached --quiet || git commit -m "data: 重建藥品資料 $(date -u +%F)"
+          git pull --rebase -q origin main
+          git push

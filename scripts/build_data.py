@@ -1,5 +1,6 @@
+"""把上游 drugs_data.json 精簡成網頁用的 drugs.json：用法：python scripts/build_data.py <上游 drugs_data.json> <輸出 drugs.json>"""
 import json, sys, re, collections, html, os
-sys.path.insert(0, sys.argv[3] if len(sys.argv) > 3 else __import__("os").path.dirname(__file__)); import freq
+sys.path.insert(0, sys.argv[3] if len(sys.argv) > 3 else os.path.dirname(os.path.abspath(__file__))); import freq
 src, out = sys.argv[1], sys.argv[2]
 d = json.load(open(src, encoding='utf-8'))
 P = "https://mcp.fda.gov.tw/insert/"
